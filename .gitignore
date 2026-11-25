@@ -1,0 +1,4 @@
+cpp-dropin/bench/bin/
+cpp-dropin/bench/fastio_macro.hpp
+a.out
+*.o
