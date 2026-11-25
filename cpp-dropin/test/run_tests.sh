@@ -71,10 +71,22 @@ run "generic bit scan (non-GCC/Clang/MSVC path)" g++ -std=c++17 -O2 test_generic
 case $(uname -m) in x86_64 | i?86)
     run "x87 doubles (FLT_EVAL_METHOD=2, like 32-bit judges)" g++ -std=c++17 -O2 -mfpmath=387 test_fastio.cpp ;;
 esac
+cat > pedantic_main.cpp <<'EOF'
+#include <bits/stdc++.h>
+using namespace std;
+int main() {
+    int n = 0;
+    cin >> n;
+    long long s = 0;
+    for (int i = 0; i < n; ++i) { long long x; cin >> x; s += x; }
+    cout << s << '\n';
+}
+EOF
+cat fastio_macro.hpp pedantic_main.cpp > pedantic.cpp
 for cxx in g++ clang++; do
     command -v "$cxx" > /dev/null 2>&1 || continue
     rm -f a.out
-    if "$cxx" -std=c++17 -O2 -Wall -Wextra -pedantic-errors -Werror -o a.out "$TPL" > log 2>&1 \
+    if "$cxx" -std=c++17 -O2 -Wall -Wextra -pedantic-errors -Werror -o a.out pedantic.cpp > log 2>&1 \
         && [ "$(printf '3\n1 2 3' | ./a.out)" = 6 ]; then ok "$cxx -pedantic-errors -Werror on the template"
     else bad "$cxx -pedantic-errors -Werror on the template"; grep -m3 -E "error" log; fi
 done
