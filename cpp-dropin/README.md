@@ -48,9 +48,14 @@ Full results for every method (`getchar`, `getchar_unlocked`, `mmap`, synced `ci
 - `cout <<` all of the above plus `const char*`, `string`, `string_view`, `endl`, `flush`
 - `fixed`, `scientific`, `setprecision`, `setw`, `setfill`, `hex`, `boolalpha`, … and any type with an `ostream& operator<<`
 
+## Interactive problems
+
+These work too. Like `std::cin`, every read that has to wait for the judge flushes `cout` first, so you don't need `endl` or `cout.flush()` after a query (they still work if you use them). Input is read with the OS `read()` call (`_read` on Windows), which returns as soon as the judge's line arrives instead of waiting for a full 64 KB block.
+
+Tested against a judge over pipes: 1,000 binary-search guessing games (about 30,000 round trips) took 0.56 s, against 0.68 s with plain `cin`/`cout`. Numbers that the judge sends in two pieces with a pause in between are also handled.
+
 ## Don't use it for
 
-- **Interactive problems.** Input is read in 64 KB blocks, so it waits for data the judge never sends. Use plain `cin`/`cout` there.
 - **Mixing with `printf` / `scanf` / `puts`.** They use separate buffers, so the output order breaks.
 - **`endl` in a loop.** It flushes on every line and erases the speed-up. Use `'\n'`.
 
@@ -59,6 +64,7 @@ Full results for every method (`getchar`, `getchar_unlocked`, `mmap`, synced `ci
 Needs C++17. The test matrix in [`test/run_tests.sh`](test/run_tests.sh) passes on:
 
 - GCC 9, 10, 11 and 13, and Clang 18, with the template pasted before `bits/stdc++.h` and pb_ds
+- three interactive judges over named pipes, with no flush calls in the solution
 - AddressSanitizer + UBSan and valgrind
 - `-pedantic-errors -Werror` (g++ and clang++)
 - the fallback paths for big-endian machines, compilers without `<charconv>` (like GCC 7/8), non-GCC/Clang/MSVC compilers, and x87 floating point (32-bit judges)
@@ -67,7 +73,7 @@ It's written to also build on GCC 7/8 and MSVC 2017+, but those weren't availabl
 
 ## How it works
 
-- **Buffers:** 64 KB `fread` / `fwrite` buffers; no locale, no stdio sync.
+- **Buffers:** 64 KB input buffer filled with `read()` (returns whatever has arrived), 64 KB output buffer written with `fwrite`; no locale, no stdio sync. A number is parsed as soon as the space or newline after it has arrived, and `cout` is flushed before any read that has to wait.
 - **Integers in:** read 8 digits at a time as one 64-bit word with multiply/shift steps. Numbers of 1–7 digits take no per-digit branch, and `long long` takes two 8-digit steps. The minus sign is handled without a branch.
 - **Integers out:** 8 ASCII digits are built inside one 64-bit register and stored at once; a lookup table counts the digits.
 - **Strings:** word ends are found 8 bytes at a time; `getline` uses `memchr`.

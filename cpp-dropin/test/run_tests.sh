@@ -37,6 +37,8 @@ EOF
 cat "$T/fastio_macro.hpp" "$T/macro_body.cpp" > "$T/macro_test.cpp"
 printf '3\nhello world  \n1 2\n3 4\n-5 -6\nabc x 2.718281\n21' > "$T/macro_in.txt"
 printf '[hello world  ]\n3 7 -11\nabc x 2.7183 1\n42\n' > "$T/macro_want.txt"
+cat "$T/fastio_macro.hpp" interactive_solution.cpp > "$T/inter_sol.cpp"
+cp interactive_judge.cpp "$T/"
 
 cd "$T" || exit 1
 pass=0
@@ -76,6 +78,20 @@ for cxx in g++ clang++; do
         && [ "$(printf '3\n1 2 3' | ./a.out)" = 6 ]; then ok "$cxx -pedantic-errors -Werror on the template"
     else bad "$cxx -pedantic-errors -Werror on the template"; grep -m3 -E "error" log; fi
 done
+if command -v mkfifo > /dev/null 2>&1 && command -v timeout > /dev/null 2>&1; then
+    if g++ -std=c++17 -O2 -o judge interactive_judge.cpp > log 2>&1 && g++ -std=c++17 -O2 -o inter_sol inter_sol.cpp >> log 2>&1; then
+        for k in guess split mixed; do
+            rm -f q a
+            mkfifo q a
+            timeout 60 ./judge $k > a < q &
+            jp=$!
+            timeout 60 ./inter_sol $k < a > q
+            wait $jp
+            jr=$?
+            if [ "$jr" -eq 0 ]; then ok "interactive $k, no explicit flush"; else bad "interactive $k (judge exit $jr)"; fi
+        done
+    else bad "interactive tests (compile error)"; grep -m3 error log; fi
+fi
 if command -v valgrind > /dev/null 2>&1; then
     rm -f a.out
     if g++ -std=c++17 -O1 -g -o a.out test_fastio.cpp > log 2>&1 && valgrind -q --error-exitcode=9 ./a.out > out 2>&1; then ok "valgrind"

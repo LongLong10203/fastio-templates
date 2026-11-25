@@ -18,9 +18,10 @@
  *        fixed / scientific / setprecision / setw / setfill / hex / boolalpha ...
  *        and any type that has an  ostream& operator<<(ostream&, const T&).
  *
+ * Interactive problems work too: like std::cin, reading flushes cout first,
+ * so you don't even need endl / flush after a query.
+ *
  * Do NOT use for:
- *   - interactive problems (input is read in 64 KB blocks, so it waits for data
- *     the judge never sends)  -> delete this template for those, cin/cout are fine.
  *   - mixing with printf / puts / scanf (separate buffers, output order breaks).
  *   - `endl` in a loop: it flushes every line and erases the speed-up; use '\n'.
  * ========================================================================= */
@@ -36,6 +37,16 @@
 #include <type_traits>
 #ifdef _MSC_VER
 #include <intrin.h>
+#endif
+#if defined(_WIN32)
+#include <io.h>
+#define FASTIO_RAW_READ 1
+#elif defined(__unix__) || defined(__APPLE__)
+#include <cerrno>
+#include <unistd.h>
+#define FASTIO_RAW_READ 1
+#else
+#define FASTIO_RAW_READ 0
 #endif
 #ifndef FASTIO_CHARCONV
 #if defined(__has_include)
@@ -145,6 +156,8 @@ inline unsigned long long swar8(unsigned long long c) {
     return (c * 10000 + (c >> 32)) & 0xFFFFFFFFull;
 }
 
+inline void flush_tied();
+
 class Reader {
     static constexpr int SZ = 1 << 16;
     static constexpr char SENT = 'X';
@@ -153,23 +166,47 @@ class Reader {
     bool eof_ = false, good_ = true;
     FILE* in;
 
+    long raw_read(char* p, size_t n) {
+#if FASTIO_RAW_READ && defined(_WIN32)
+        int fd = _fileno(in);
+        if (fd >= 0) return _read(fd, p, unsigned(n));
+#elif FASTIO_RAW_READ
+        int fd = fileno(in);
+        if (fd >= 0) {
+            long r;
+            do r = long(::read(fd, p, n));
+            while (r < 0 && errno == EINTR);
+            return r;
+        }
+#endif
+        return long(std::fread(p, 1, n, in));
+    }
     FASTIO_COLD void refill() {
         size_t rem = size_t(end - cur);
         if (rem) std::memmove(buf, cur, rem);
         cur = buf, end = buf + rem;
-        if (!eof_) {
-            size_t want = SZ - rem, got = std::fread(end, 1, want, in);
-            if (got < want) eof_ = true;
-            end += got;
+        if (!eof_ && rem < size_t(SZ)) {
+            flush_tied();
+            long got = raw_read(end, SZ - rem);
+            if (got <= 0) eof_ = true;
+            else end += got;
         }
         *end = SENT;
+    }
+    bool terminated() const {
+        for (const char* p = cur; p < end; ++p)
+            if ((unsigned char)*p <= ' ') return true;
+        return false;
     }
     FASTIO_COLD bool prepare() {
         for (;;) {
             while (cur < end && (unsigned char)*cur <= ' ') ++cur;
-            if (end - cur >= 64 || eof_) return cur < end;
+            if (end - cur >= 64 || eof_ || (cur < end && terminated())) return cur < end;
             refill();
         }
+    }
+    FASTIO_COLD void complete_token() {
+        while (!eof_ && end - cur < SZ && !terminated()) refill();
     }
     bool skip_ws() {
         char* p = cur;
@@ -229,7 +266,7 @@ class Reader {
     }
     template <class T> void read_float(T& x) {
         if (!skip_ws()) { good_ = false, x = 0; return; }
-        if (end - cur < 512 && !eof_) refill();
+        if (end - cur < 512 && !eof_) complete_token();
         char* p = cur;
         if (*p == '+') ++p;
 #if FLT_EVAL_METHOD == 0
@@ -600,6 +637,7 @@ public:
 
 inline Reader fin;
 inline Writer fout;
+inline void flush_tied() { fout.flush(); }
 }
 namespace std { namespace fastio = ::fastio; }
 
