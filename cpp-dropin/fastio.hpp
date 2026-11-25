@@ -2,8 +2,9 @@
  * Drop-in replacement for cin / cout that keeps the >> and << syntax.
  * 2-10x faster than  cin.tie(0)->sync_with_stdio(0)  on big inputs.
  *
- *  - Paste this block at the top of your file. Your #includes and code can go
- *    before or after it.
+ *  - Paste this whole file at the top of your solution (judges need a single
+ *    file), or  #include "fastio.hpp"  when testing locally. Your #includes and
+ *    code can go before or after it.
  *  - The two #defines at the end make `cin` / `cout` (and `std::cin` /
  *    `std::cout`) mean the fast versions, so the rest of your code stays the same.
  *    Delete them if you prefer writing  fastio::fin >> x  /  fastio::fout << x.
@@ -25,6 +26,8 @@
  *   - mixing with printf / puts / scanf (separate buffers, output order breaks).
  *   - `endl` in a loop: it flushes every line and erases the speed-up; use '\n'.
  * ========================================================================= */
+#ifndef FASTIO_CPP_DROPIN_HPP
+#define FASTIO_CPP_DROPIN_HPP
 #include <cfloat>
 #include <cmath>
 #include <cstdio>
@@ -643,4 +646,5 @@ namespace std { namespace fastio = ::fastio; }
 
 #define cin fastio::fin
 #define cout fastio::fout
+#endif
 /* ============================== END FAST IO ============================== */

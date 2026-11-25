@@ -1,10 +1,10 @@
 #!/bin/sh
 # Runs the fastio tests under every compiler and configuration found on this machine.
-# All test variants are regenerated from ../fastio_template.cpp on every run.
+# All test variants are regenerated from ../fastio.hpp on every run.
 # Usage (from this folder):  sh run_tests.sh
 cd "$(dirname "$0")" || exit 1
 HERE=$(pwd)
-TPL="$HERE/../fastio_template.cpp"
+TPL="$HERE/../fastio.hpp"
 T=$(mktemp -d)
 trap 'rm -rf "$T"' EXIT
 

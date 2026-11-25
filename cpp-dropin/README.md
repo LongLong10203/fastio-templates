@@ -4,7 +4,7 @@ A single block you paste at the top of a C++17 solution. Your code keeps using `
 
 ## Usage
 
-Copy everything from the top of [`fastio_template.cpp`](fastio_template.cpp) down to the `END FAST IO` line into your file. Your `#include`s and code can go before or after it.
+Paste the whole of [`fastio.hpp`](fastio.hpp) at the top of your solution, since judges need a single file. When testing locally you can write `#include "fastio.hpp"` instead. Your own `#include`s and code can go before or after it.
 
 ```cpp
 /* ...fast io template... */

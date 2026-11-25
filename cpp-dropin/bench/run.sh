@@ -4,7 +4,6 @@ set -e
 cd "$(dirname "$0")"
 HERE=$(pwd)
 mkdir -p bin /tmp/fio
-sed -n '1,/END FAST IO/p' ../fastio_template.cpp > fastio_macro.hpp
 for m in cin_sync cin_nosync fastio getchar getchar_unlocked fread_func scanf_printf mmap_raw gen; do
   g++ -std=gnu++17 -O2 -o bin/$m $m.cpp
 done
